@@ -3,6 +3,11 @@ name: Release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version (e.g., v1.2.3)'
+        required: true
 
 jobs:
   publish:
@@ -19,14 +24,32 @@ jobs:
       - name: Restore
         run: dotnet restore CustomRoselynAnalyzer/CustomRoselynAnalyzer.csproj
 
+      - name: Determine package version
+        id: determine-version
+        shell: bash
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${{ github.event.release.tag_name }}"
+          fi
+
+          if [ -z "$VERSION" ]; then
+            echo "Package version was not provided." >&2
+            exit 1
+          fi
+
+          echo "PACKAGE_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Pack
         id: pack
         shell: bash
         run: |
-          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="$PACKAGE_VERSION"
           dotnet pack CustomRoselynAnalyzer/CustomRoselynAnalyzer.csproj \
             --configuration Release \
-            /p:PackageVersion="$VERSION" \
+            -p:PackageVersion="$VERSION" \
             --output artifacts/nuget
           PACKAGE_PATH=$(ls artifacts/nuget/*.nupkg | head -n 1)
           if [ -z "$PACKAGE_PATH" ]; then
@@ -82,6 +105,7 @@ jobs:
           path: ${{ steps.sonar.outputs.plugin_path }}
 
       - name: Upload package to release
+        if: github.event_name == 'release'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -92,6 +116,7 @@ jobs:
           asset_content_type: application/zip
 
       - name: Upload SonarQube plugin to release
+        if: github.event_name == 'release'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
