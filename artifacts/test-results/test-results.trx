@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="47b6cd77-9b21-4801-a612-e8c4bbfa0018" name="@9a1a41030132 2025-12-03 22:10:26" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2025-12-03T22:10:26.3341537+00:00" queuing="2025-12-03T22:10:26.3341538+00:00" start="2025-12-03T22:10:22.5385423+00:00" finish="2025-12-03T22:10:26.6537382+00:00" />
+  <TestSettings name="default" id="f29f864f-5442-44ac-9d57-1dc4cb8dd454">
+    <Deployment runDeploymentRoot="_9a1a41030132_2025-12-03_22_10_26" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="1113d6db-dc5b-42f6-be55-a0485be3fd33" testId="f8d1f7a1-d213-b42d-00c7-574e7e849f60" testName="CustomRoselynAnalyzer.Tests.NestedInfrastructureLoopRuleTests.ReportsInfrastructureCallInsideLoop" computerName="9a1a41030132" duration="00:00:00.0316801" startTime="2025-12-03T22:10:26.4705882+00:00" endTime="2025-12-03T22:10:26.4705883+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1113d6db-dc5b-42f6-be55-a0485be3fd33" />
+    <UnitTestResult executionId="d96e6f05-7177-4a74-ac1e-827505e5e9bc" testId="a42acfe4-d1ed-d677-d515-0bad223f1f07" testName="CustomRoselynAnalyzer.Tests.AvoidConsoleWriteLineRuleTests.ReportsConsoleWriteLineInvocation" computerName="9a1a41030132" duration="00:00:01.0429809" startTime="2025-12-03T22:10:25.1599869+00:00" endTime="2025-12-03T22:10:25.1600020+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d96e6f05-7177-4a74-ac1e-827505e5e9bc" />
+    <UnitTestResult executionId="ceb10d06-ae35-47c1-a5da-f610dfb232b5" testId="e6e14226-5436-bcbf-a9b3-0a37e0fb67df" testName="CustomRoselynAnalyzer.Tests.PublicAsyncSuffixRuleTests.DoesNotReportWhenMethodEndsWithAsync" computerName="9a1a41030132" duration="00:00:00.0068733" startTime="2025-12-03T22:10:25.4132599+00:00" endTime="2025-12-03T22:10:25.4132600+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ceb10d06-ae35-47c1-a5da-f610dfb232b5" />
+    <UnitTestResult executionId="bf6d4113-221f-47b8-baf9-08bc57379b90" testId="dd18bff9-84e3-6706-afe9-5d1949c83c50" testName="CustomRoselynAnalyzer.Tests.AvoidConsoleWriteLineRuleTests.DoesNotReportOtherCalls" computerName="9a1a41030132" duration="00:00:00.0101902" startTime="2025-12-03T22:10:25.1711199+00:00" endTime="2025-12-03T22:10:25.1711199+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bf6d4113-221f-47b8-baf9-08bc57379b90" />
+    <UnitTestResult executionId="a331b591-33ff-4e80-8d4c-3ca9909683a7" testId="9ed886c2-0443-c2fd-7185-5681dc200947" testName="CustomRoselynAnalyzer.Tests.PublicAsyncSuffixRuleTests.ReportsMissingAsyncSuffix" computerName="9a1a41030132" duration="00:00:01.2927964" startTime="2025-12-03T22:10:25.4061931+00:00" endTime="2025-12-03T22:10:25.4061932+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a331b591-33ff-4e80-8d4c-3ca9909683a7" />
+    <UnitTestResult executionId="24551ece-8ad8-44f6-863e-1047ca636068" testId="e7f0c2f6-da21-f2dc-42a2-4b01016cf243" testName="CustomRoselynAnalyzer.Tests.NestedInfrastructureLoopRuleTests.DoesNotReportInfrastructureCallOutsideLoop" computerName="9a1a41030132" duration="00:00:02.3252968" startTime="2025-12-03T22:10:26.4387193+00:00" endTime="2025-12-03T22:10:26.4387194+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="24551ece-8ad8-44f6-863e-1047ca636068" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="CustomRoselynAnalyzer.Tests.AvoidConsoleWriteLineRuleTests.DoesNotReportOtherCalls" storage="/workspaces/roselyncustomanalyzer/customroselynanalyzer.tests/bin/release/net9.0/customroselynanalyzer.tests.dll" id="dd18bff9-84e3-6706-afe9-5d1949c83c50">
+      <Execution id="bf6d4113-221f-47b8-baf9-08bc57379b90" />
+      <TestMethod codeBase="/workspaces/RoselynCustomAnalyzer/CustomRoselynAnalyzer.Tests/bin/Release/net9.0/CustomRoselynAnalyzer.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CustomRoselynAnalyzer.Tests.AvoidConsoleWriteLineRuleTests" name="DoesNotReportOtherCalls" />
+    </UnitTest>
+    <UnitTest name="CustomRoselynAnalyzer.Tests.PublicAsyncSuffixRuleTests.DoesNotReportWhenMethodEndsWithAsync" storage="/workspaces/roselyncustomanalyzer/customroselynanalyzer.tests/bin/release/net9.0/customroselynanalyzer.tests.dll" id="e6e14226-5436-bcbf-a9b3-0a37e0fb67df">
+      <Execution id="ceb10d06-ae35-47c1-a5da-f610dfb232b5" />
+      <TestMethod codeBase="/workspaces/RoselynCustomAnalyzer/CustomRoselynAnalyzer.Tests/bin/Release/net9.0/CustomRoselynAnalyzer.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CustomRoselynAnalyzer.Tests.PublicAsyncSuffixRuleTests" name="DoesNotReportWhenMethodEndsWithAsync" />
+    </UnitTest>
+    <UnitTest name="CustomRoselynAnalyzer.Tests.PublicAsyncSuffixRuleTests.ReportsMissingAsyncSuffix" storage="/workspaces/roselyncustomanalyzer/customroselynanalyzer.tests/bin/release/net9.0/customroselynanalyzer.tests.dll" id="9ed886c2-0443-c2fd-7185-5681dc200947">
+      <Execution id="a331b591-33ff-4e80-8d4c-3ca9909683a7" />
+      <TestMethod codeBase="/workspaces/RoselynCustomAnalyzer/CustomRoselynAnalyzer.Tests/bin/Release/net9.0/CustomRoselynAnalyzer.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CustomRoselynAnalyzer.Tests.PublicAsyncSuffixRuleTests" name="ReportsMissingAsyncSuffix" />
+    </UnitTest>
+    <UnitTest name="CustomRoselynAnalyzer.Tests.NestedInfrastructureLoopRuleTests.ReportsInfrastructureCallInsideLoop" storage="/workspaces/roselyncustomanalyzer/customroselynanalyzer.tests/bin/release/net9.0/customroselynanalyzer.tests.dll" id="f8d1f7a1-d213-b42d-00c7-574e7e849f60">
+      <Execution id="1113d6db-dc5b-42f6-be55-a0485be3fd33" />
+      <TestMethod codeBase="/workspaces/RoselynCustomAnalyzer/CustomRoselynAnalyzer.Tests/bin/Release/net9.0/CustomRoselynAnalyzer.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CustomRoselynAnalyzer.Tests.NestedInfrastructureLoopRuleTests" name="ReportsInfrastructureCallInsideLoop" />
+    </UnitTest>
+    <UnitTest name="CustomRoselynAnalyzer.Tests.NestedInfrastructureLoopRuleTests.DoesNotReportInfrastructureCallOutsideLoop" storage="/workspaces/roselyncustomanalyzer/customroselynanalyzer.tests/bin/release/net9.0/customroselynanalyzer.tests.dll" id="e7f0c2f6-da21-f2dc-42a2-4b01016cf243">
+      <Execution id="24551ece-8ad8-44f6-863e-1047ca636068" />
+      <TestMethod codeBase="/workspaces/RoselynCustomAnalyzer/CustomRoselynAnalyzer.Tests/bin/Release/net9.0/CustomRoselynAnalyzer.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CustomRoselynAnalyzer.Tests.NestedInfrastructureLoopRuleTests" name="DoesNotReportInfrastructureCallOutsideLoop" />
+    </UnitTest>
+    <UnitTest name="CustomRoselynAnalyzer.Tests.AvoidConsoleWriteLineRuleTests.ReportsConsoleWriteLineInvocation" storage="/workspaces/roselyncustomanalyzer/customroselynanalyzer.tests/bin/release/net9.0/customroselynanalyzer.tests.dll" id="a42acfe4-d1ed-d677-d515-0bad223f1f07">
+      <Execution id="d96e6f05-7177-4a74-ac1e-827505e5e9bc" />
+      <TestMethod codeBase="/workspaces/RoselynCustomAnalyzer/CustomRoselynAnalyzer.Tests/bin/Release/net9.0/CustomRoselynAnalyzer.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CustomRoselynAnalyzer.Tests.AvoidConsoleWriteLineRuleTests" name="ReportsConsoleWriteLineInvocation" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="f8d1f7a1-d213-b42d-00c7-574e7e849f60" executionId="1113d6db-dc5b-42f6-be55-a0485be3fd33" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a42acfe4-d1ed-d677-d515-0bad223f1f07" executionId="d96e6f05-7177-4a74-ac1e-827505e5e9bc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e6e14226-5436-bcbf-a9b3-0a37e0fb67df" executionId="ceb10d06-ae35-47c1-a5da-f610dfb232b5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dd18bff9-84e3-6706-afe9-5d1949c83c50" executionId="bf6d4113-221f-47b8-baf9-08bc57379b90" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9ed886c2-0443-c2fd-7185-5681dc200947" executionId="a331b591-33ff-4e80-8d4c-3ca9909683a7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e7f0c2f6-da21-f2dc-42a2-4b01016cf243" executionId="24551ece-8ad8-44f6-863e-1047ca636068" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="6" executed="6" passed="6" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.4.5+1caef2f33e (64-bit .NET 9.0.10)
+[xUnit.net 00:00:00.70]   Discovering: CustomRoselynAnalyzer.Tests
+[xUnit.net 00:00:00.73]   Discovered:  CustomRoselynAnalyzer.Tests
+[xUnit.net 00:00:00.73]   Starting:    CustomRoselynAnalyzer.Tests
+[xUnit.net 00:00:03.13]   Finished:    CustomRoselynAnalyzer.Tests
+</StdOut>
+    </Output>
+    <CollectorDataEntries>
+      <Collector agentName="9a1a41030132" uri="datacollector://microsoft/CoverletCodeCoverage/1.0" collectorDisplayName="XPlat code coverage">
+        <UriAttachments>
+          <UriAttachment>
+            <A href="9a1a41030132/coverage.cobertura.xml"></A>
+          </UriAttachment>
+        </UriAttachments>
+      </Collector>
+    </CollectorDataEntries>
+  </ResultSummary>
+</TestRun>

@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore CustomRoselynAnalyzer/CustomRoselynAnalyzer.csproj
+
+      - name: Pack
+        id: pack
+        shell: bash
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          dotnet pack CustomRoselynAnalyzer/CustomRoselynAnalyzer.csproj \
+            --configuration Release \
+            /p:PackageVersion="$VERSION" \
+            --output artifacts/nuget
+          PACKAGE_PATH=$(ls artifacts/nuget/*.nupkg | head -n 1)
+          if [ -z "$PACKAGE_PATH" ]; then
+            echo "Package was not created" >&2
+            exit 1
+          fi
+          PACKAGE_NAME=$(basename "$PACKAGE_PATH")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "package_path=$PACKAGE_PATH" >> "$GITHUB_OUTPUT"
+          echo "package_name=$PACKAGE_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Generate SonarQube plugin
+        id: sonar
+        shell: bash
+        run: |
+          SDK_ZIP="$RUNNER_TEMP/SonarQube.Roslyn.SDK.zip"
+          curl -L -o "$SDK_ZIP" https://github.com/SonarSource/sonarqube-roslyn-sdk/releases/download/4.0/SonarQube.Roslyn.SDK-4.0.zip
+          SDK_DIR="$RUNNER_TEMP/SonarQube.Roslyn.SDK"
+          rm -rf "$SDK_DIR"
+          mkdir -p "$SDK_DIR"
+          unzip -q "$SDK_ZIP" -d "$SDK_DIR"
+
+          LOCAL_FEED="/c/LocalNuGetFeed"
+          mkdir -p "$LOCAL_FEED"
+          cp "${{ steps.pack.outputs.package_path }}" "$LOCAL_FEED/"
+
+          "$SDK_DIR/RoslynSonarQubePluginGenerator.exe" /a:CustomRoselynAnalyzer
+
+          PLUGIN_JAR=$(find "$GITHUB_WORKSPACE" -name 'CustomRoselynAnalyzer-plugin*.jar' | head -n 1)
+          if [ -z "$PLUGIN_JAR" ]; then
+            echo "SonarQube plugin jar not found" >&2
+            exit 1
+          fi
+
+          PLUGIN_DIR="$GITHUB_WORKSPACE/artifacts/sonarqube"
+          mkdir -p "$PLUGIN_DIR"
+          PLUGIN_DEST="$PLUGIN_DIR/$(basename "$PLUGIN_JAR")"
+          cp "$PLUGIN_JAR" "$PLUGIN_DEST"
+
+          echo "plugin_path=$PLUGIN_DEST" >> "$GITHUB_OUTPUT"
+          echo "plugin_name=$(basename "$PLUGIN_DEST")" >> "$GITHUB_OUTPUT"
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: ${{ steps.pack.outputs.package_path }}
+
+      - name: Upload SonarQube plugin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonarqube-plugin
+          path: ${{ steps.sonar.outputs.plugin_path }}
+
+      - name: Upload package to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ steps.pack.outputs.package_path }}
+          asset_name: ${{ steps.pack.outputs.package_name }}
+          asset_content_type: application/zip
+
+      - name: Upload SonarQube plugin to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ steps.sonar.outputs.plugin_path }}
+          asset_name: ${{ steps.sonar.outputs.plugin_name }}
+          asset_content_type: application/java-archive
