@@ -1,0 +1,53 @@
+/bin/
+/obj/
+
+*.user
+*.vs
+*.suo
+*.cache
+*.log
+*.vsconfig
+.nuget/packages/
+project.lock.json
+*.vscode/
+*.ide/
+*.dbmdl
+*.bak
+*.backup
+*.swp
+*.DS_Store
+node_modules/
+# Rider
+.idea/
+**/*.iml
+# Publish outputs
+/[Pp]ublish/
+# VS Code settings
+.vscode/
+# Resharper
+_ReSharper*/
+*.DotSettings.user
+# dotCover
+*.dotCover
+# NCrunch
+*.ncrunch*
+# TeamCity
+.teamcity
+# Mono
+*.pidb
+*.userprefs
+# OS generated files
+ehthumbs.db
+Thumbs.db
+# Logs
+*.log
+# Build results
+*.Build.csproj
+*.builds
+# Tooling
+.vs/
+
+# JetBrains
+*.sln.iml
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
