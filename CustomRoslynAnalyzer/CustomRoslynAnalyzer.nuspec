@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata>
     <id>CustomRoslynAnalyzer</id>
-    <version>0.0.4</version>
+    <version>0.1.0</version>
     <authors>felpasl</authors>
     <description>A .NET Standard 2.0 analyzer library that provides diagnostics for usage and naming rules in C# code.</description>
     <projectUrl>https://github.com/felpasl/CustomRoslynAnalyzer</projectUrl>
