@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>CustomRoslynAnalyzer</id>
+    <version>0.0.3</version>
+    <authors>felpasl</authors>
+    <description>A .NET Standard 2.0 analyzer library that provides diagnostics for usage and naming rules in C# code.</description>
+    <projectUrl>https://github.com/felpasl/CustomRoslynAnalyzer</projectUrl>
+    <licenceUrl>https://github.com/felpasl/CustomRoslynAnalyzer/blob/main/LICENSE</licenceUrl>
+    <licence type="expression">Apache-2.0</licence>
+    <tags>roslyn analyzer csharp code-analysis</tags>
+    <packageTypes>
+      <packageType name="Analyzer" />
+    </packageTypes>
+  </metadata>
+  <files>
+    <file src="..\README.md" target="docs\README.md" />
+    <file src="..\LICENSE" target="LICENSE" />
+    <file src="CustomRoslynAnalyzer.nuspec" target="CustomRoslynAnalyzer.nuspec" />
+  </files>
+</package>
