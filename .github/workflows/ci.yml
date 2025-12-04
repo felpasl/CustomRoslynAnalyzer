@@ -36,6 +36,17 @@ jobs:
             --collect:"XPlat Code Coverage" \
             --logger "trx;LogFileName=test-results.trx" \
             --results-directory ./artifacts/test-results
+      - name: Select coverage file
+        id: coverage-file
+        run: |
+          set -euo pipefail
+          coverage_file=$(find ./artifacts/test-results -name coverage.cobertura.xml | head -n 1)
+          if [ -z "$coverage_file" ]; then
+            echo "No coverage file found in artifacts/test-results" >&2
+            exit 1
+          fi
+          echo "Using coverage file: $coverage_file"
+          echo "coverage_file=$coverage_file" >> $GITHUB_OUTPUT
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v5
@@ -46,7 +57,7 @@ jobs:
         if: always()
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          filename: artifacts/test-results/**/coverage.cobertura.xml
+          filename: ${{ steps.coverage-file.outputs.coverage_file }}
           badge: true
           format: markdown
           output: both
