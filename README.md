@@ -19,7 +19,7 @@ for (var i = 0; i < count; i++)
 {
 	Trace.WriteLine($"Iteration {i + 1}/{count}");
 	await worker.FetchTelemetryAsync(); // violates CR0003 because `TelemetryApiClient` lives under SampleApp.Infrastructure
-	_ = await worker.Compute();
+	_ = await worker.Compute(); // violates CR0002 because Comupte() do not end with `Async` 
 }
 
 Console.WriteLine($"Telemetry fetched from {snapshot.Source}."); // violates CR0001
