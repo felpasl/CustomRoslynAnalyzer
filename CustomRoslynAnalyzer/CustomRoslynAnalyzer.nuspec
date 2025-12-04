@@ -10,9 +10,6 @@
     <licence type="expression">Apache-2.0</licence>
     <tags>roslyn analyzer csharp code-analysis</tags>
     <readme>README.md</readme>
-    <packageTypes>
-      <packageType name="Analyzer" />
-    </packageTypes>
   </metadata>
   <files>
     <file src="..\README.md" target="README.md" />

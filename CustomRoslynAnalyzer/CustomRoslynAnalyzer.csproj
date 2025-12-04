@@ -10,7 +10,6 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <Version>0.1.0</Version>
     <NuspecFile>CustomRoslynAnalyzer.nuspec</NuspecFile>
-    <PackageType>Analyzer</PackageType>    
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
