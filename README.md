@@ -1,5 +1,7 @@
 ## Roslyn Custom Analyzer package
 
+![CI Status](https://github.com/felpasl/CustomRoslynAnalyzer/actions/workflows/ci.yml/badge.svg) ![Release Status](https://github.com/felpasl/CustomRoslynAnalyzer/actions/workflows/cd.yml/badge.svg) [![NuGet](https://img.shields.io/nuget/v/CustomRoslynAnalyzer.svg)](https://www.nuget.org/packages/CustomRoslynAnalyzer/)
+
 `CustomRoslynAnalyzer` is a .NET Standard 2.0 analyzer library that ships as a NuGet package (the workflow already packs/publishes it) and exposes the following diagnostics to consumers:
 
 | ID | Category | Description |
