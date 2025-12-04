@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis.Testing;
+using Microsoft.CodeAnalysis.CSharp.Testing;
 using CustomRoslynAnalyzer.Rules;
 using VerifyCS = CustomRoslynAnalyzer.Tests.Helpers.CSharpAnalyzerVerifier<CustomRoslynAnalyzer.CustomUsageAnalyzer>;
 
@@ -258,26 +259,19 @@ namespace Sample.Infrastructure
         }
 
         [Fact]
-        public async Task ReportsIndirectInfrastructureCallInsideLoop()
+        public async Task ReportsStaticInfrastructureMethodCallInsideLoop()
         {
             const string testCode = @"
 namespace Demo
 {
     public class Processor
     {
-        private readonly Sample.Infrastructure.Repository _repository = new();
-
         public void Process()
         {
             for (var i = 0; i < 3; i++)
             {
-                {|#0:DoSave()|};
+                Sample.Infrastructure.Repository.{|#0:SaveStatic|}();
             }
-        }
-
-        private void DoSave()
-        {
-            _repository.Save();
         }
     }
 }
@@ -286,11 +280,12 @@ namespace Sample.Infrastructure
 {
     public sealed class Repository
     {
-        public void Save()
+        public static void SaveStatic()
         {
         }
     }
 }";
+
             var expected = VerifyCS.Diagnostic(NestedInfrastructureLoopRule.DefaultDescriptor)
                 .WithLocation(0);
 

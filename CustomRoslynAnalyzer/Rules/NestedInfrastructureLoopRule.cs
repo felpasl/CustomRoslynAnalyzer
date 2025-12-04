@@ -54,16 +54,18 @@ public sealed class NestedInfrastructureLoopRule : IAnalyzerRule
     private readonly ConcurrentDictionary<ISymbol, bool> _methodInfrastructureCache =
         new(SymbolEqualityComparer.Default);
 
+    private readonly RuleConfiguration _configuration;
+
     public NestedInfrastructureLoopRule(IRuleConfigurationSource configurationSource)
     {
-        var configuration = configurationSource.GetConfiguration(Info);
-        Descriptor = RuleDescriptorFactory.Create(Info, configuration);
-        _isEnabled = configuration.IsEnabled;
+        _configuration = configurationSource.GetConfiguration(Info);
+        Descriptor = RuleDescriptorFactory.Create(Info, _configuration);
+        _isEnabled = _configuration.IsEnabled;
     }
 
     public void Register(CompilationStartAnalysisContext context)
     {
-        if (!_isEnabled)
+        if (!_isEnabled || _configuration.Severity == DiagnosticSeverity.Hidden)
         {
             return;
         }
