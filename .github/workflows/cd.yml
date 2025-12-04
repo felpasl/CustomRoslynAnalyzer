@@ -3,10 +3,24 @@ name: Release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version (e.g., v1.2.3 or 1.2.3)'
+        required: true
+
+permissions:
+  contents: write
 
 jobs:
-  publish:
+  pack:
     runs-on: windows-latest
+    outputs:
+      package_path: ${{ steps.pack.outputs.package_path }}
+      package_name: ${{ steps.pack.outputs.package_name }}
+      package_version: ${{ steps.determine-version.outputs.version }}
+      release_tag: ${{ steps.determine-version.outputs.raw_version }}
+      release_upload_url: ${{ steps.release-url.outputs.upload_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,14 +33,34 @@ jobs:
       - name: Restore
         run: dotnet restore CustomRoselynAnalyzer/CustomRoselynAnalyzer.csproj
 
-      - name: Pack
+      - name: Determine package version
+        id: determine-version
+        shell: bash
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            RAW_VERSION="${{ github.event.inputs.version }}"
+          else
+            RAW_VERSION="${{ github.event.release.tag_name }}"
+          fi
+
+          if [ -z "$RAW_VERSION" ]; then
+            echo "Package version was not provided." >&2
+            exit 1
+          fi
+
+          VERSION="${RAW_VERSION#v}"
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "raw_version=$RAW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Pack analyzer
         id: pack
         shell: bash
         run: |
-          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${{ steps.determine-version.outputs.version }}"
           dotnet pack CustomRoselynAnalyzer/CustomRoselynAnalyzer.csproj \
             --configuration Release \
-            /p:PackageVersion="$VERSION" \
+            -p:PackageVersion="$VERSION" \
             --output artifacts/nuget
           PACKAGE_PATH=$(ls artifacts/nuget/*.nupkg | head -n 1)
           if [ -z "$PACKAGE_PATH" ]; then
@@ -34,12 +68,52 @@ jobs:
             exit 1
           fi
           PACKAGE_NAME=$(basename "$PACKAGE_PATH")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "package_path=$PACKAGE_PATH" >> "$GITHUB_OUTPUT"
           echo "package_name=$PACKAGE_NAME" >> "$GITHUB_OUTPUT"
 
-      - name: Generate SonarQube plugin
-        id: sonar
+      - name: Publish package to NuGet
+        shell: bash
+        run: |
+          file="${{ steps.pack.outputs.package_path }}"
+          dotnet nuget push "$file" \
+            --api-key "${{ secrets.NUGET_KEY }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: ${{ steps.pack.outputs.package_path }}
+
+      - name: Resolve release upload URL
+        id: release-url
+        shell: bash
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "release" ]; then
+            echo "upload_url=${{ github.event.release.upload_url }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload package to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ steps.determine-version.outputs.raw_version }}" '${{ steps.pack.outputs.package_path }}' || true
+
+  sonar-plugin:
+    runs-on: windows-latest
+    needs: pack
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download packaged analyzer
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-package
+          path: artifacts/nuget
+
+      - name: Download SonarQube Roslyn SDK
         shell: bash
         run: |
           SDK_ZIP="$RUNNER_TEMP/SonarQube.Roslyn.SDK.zip"
@@ -48,55 +122,47 @@ jobs:
           rm -rf "$SDK_DIR"
           mkdir -p "$SDK_DIR"
           unzip -q "$SDK_ZIP" -d "$SDK_DIR"
+          echo "SDK_DIR=$SDK_DIR" >> "$GITHUB_ENV"
 
+      - name: Prepare local NuGet feed
+        shell: bash
+        run: |
           LOCAL_FEED="/c/LocalNuGetFeed"
           mkdir -p "$LOCAL_FEED"
-          cp "${{ steps.pack.outputs.package_path }}" "$LOCAL_FEED/"
+          cp artifacts/nuget/*.nupkg "$LOCAL_FEED/"
 
-          "$SDK_DIR/RoslynSonarQubePluginGenerator.exe" /a:CustomRoselynAnalyzer
-
-          PLUGIN_JAR=$(find "$GITHUB_WORKSPACE" -name 'CustomRoselynAnalyzer-plugin*.jar' | head -n 1)
-          if [ -z "$PLUGIN_JAR" ]; then
-            echo "SonarQube plugin jar not found" >&2
+      - name: Generate SonarQube plugin
+        id: generate-plugin
+        shell: pwsh
+        run: |
+          $version = '${{ needs.pack.outputs.package_version }}'
+          $sdkPath = Join-Path $env:SDK_DIR 'RoslynSonarQubePluginGenerator.exe'
+          & $sdkPath /analyzer:"CustomRoselynAnalyzer:$version" /customnugetrepo:"C:\LocalNuGetFeed" /recurse
+          $pluginJar = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Filter 'CustomRoselynAnalyzer-plugin*.jar' -Recurse -File | Select-Object -First 1
+          if (-not $pluginJar) {
+            Write-Error 'SonarQube plugin jar not found'
             exit 1
-          fi
-
-          PLUGIN_DIR="$GITHUB_WORKSPACE/artifacts/sonarqube"
-          mkdir -p "$PLUGIN_DIR"
-          PLUGIN_DEST="$PLUGIN_DIR/$(basename "$PLUGIN_JAR")"
-          cp "$PLUGIN_JAR" "$PLUGIN_DEST"
-
-          echo "plugin_path=$PLUGIN_DEST" >> "$GITHUB_OUTPUT"
-          echo "plugin_name=$(basename "$PLUGIN_DEST")" >> "$GITHUB_OUTPUT"
-
-      - name: Upload package artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: nuget-package
-          path: ${{ steps.pack.outputs.package_path }}
+          }
+          $releaseTag = '${{ needs.pack.outputs.release_tag }}'
+          if (-not $releaseTag) {
+            $releaseTag = '${{ needs.pack.outputs.package_version }}'
+          }
+          $pluginDir = Join-Path $env:GITHUB_WORKSPACE 'artifacts/sonarqube'
+          New-Item -ItemType Directory -Path $pluginDir -Force | Out-Null
+          $pluginReleaseName = "CustomRoselynAnalyzer-plugin.$releaseTag.jar"
+          $pluginDest = Join-Path $pluginDir $pluginReleaseName
+          Copy-Item -Path $pluginJar.FullName -Destination $pluginDest -Force
+          echo "plugin_path=$pluginDest" >> $env:GITHUB_OUTPUT
+          echo "plugin_name=$pluginReleaseName" >> $env:GITHUB_OUTPUT
 
       - name: Upload SonarQube plugin artifact
         uses: actions/upload-artifact@v4
         with:
           name: sonarqube-plugin
-          path: ${{ steps.sonar.outputs.plugin_path }}
+          path: ${{ steps.generate-plugin.outputs.plugin_path }}
 
-      - name: Upload package to release
-        uses: actions/upload-release-asset@v1
+      - name: Upload plugin to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ steps.pack.outputs.package_path }}
-          asset_name: ${{ steps.pack.outputs.package_name }}
-          asset_content_type: application/zip
-
-      - name: Upload SonarQube plugin to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ steps.sonar.outputs.plugin_path }}
-          asset_name: ${{ steps.sonar.outputs.plugin_name }}
-          asset_content_type: application/java-archive
+        run: |
+          gh release upload "${{ needs.pack.outputs.release_tag }}" '${{ steps.generate-plugin.outputs.plugin_path }}' || true

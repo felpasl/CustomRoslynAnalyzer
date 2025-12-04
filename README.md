@@ -1,44 +1,34 @@
-## Roslyn Custom Analyzer Playground
+## Roslyn Custom Analyzer package
 
-This repository hosts a Roslyn analyzer package plus a small console application that references it so you can quickly try out custom rules without publishing a NuGet package first.
+`CustomRoselynAnalyzer` is a .NET Standard 2.0 analyzer library that ships as a NuGet package (the workflow already packs/publishes it) and exposes the following diagnostics to consumers:
 
-### Projects
+| ID | Category | Description |
+|----|----------|-------------|
+| `CR0001` | Usage | Flags `Console.WriteLine` calls so you can enforce a logging abstraction instead of writing directly to standard output. |
+| `CR0002` | Naming | Requires public async methods to end with `Async`, making their asynchronous nature explicit. |
+| `CR0003` | Usage | Warns whenever a loop body invokes services deeper in `Infrastructure` namespaces, helping avoid repeated expensive work. |
 
-- `CustomRoselynAnalyzer` – Analyzer library that targets `netstandard2.0` and can be packed/published as a standalone analyzer package.
-- `SampleApp` – .NET 9 console app wired up to the analyzer via a project reference (`OutputItemType="Analyzer"`), giving fast feedback while developing rules.
+Since these rules run inside the analyzer, any consuming project that references the NuGet package (or project reference with `OutputItemType="Analyzer"`) will surface `CR0001`/`CR0002`/`CR0003` as compiler warnings.
 
-Both projects are included in `CustomRoselynAnalyzer.sln`.
+### Violations in `SampleApp`
 
-### Implemented rules
+`SampleApp/Program.cs` intentionally demonstrates the diagnostics emitted by the analyzer. In the loop below, the analyzer flags the `Console.WriteLine` call (`CR0001`) and the repetitive call to a service defined in `SampleApp.Infrastructure` (`CR0003`):
 
-| ID     | Category | Description |
-|--------|----------|-------------|
-| `CR0001` | Usage | Flags any call to `Console.WriteLine` to encourage the use of a logging abstraction. |
-| `CR0002` | Naming | Requires public async methods to end with `Async` so their behavior is clear to callers. |
-| `CR0003` | Usage | Warns when loop bodies invoke services under namespaces containing `Infrastructure` to avoid repeated expensive calls. |
+```csharp
+for (var i = 0; i < count; i++)
+{
+	Trace.WriteLine($"Iteration {i + 1}/{count}");
+	await worker.FetchTelemetryAsync(); // violates CR0003 because `TelemetryApiClient` lives under SampleApp.Infrastructure
+	_ = await worker.Compute();
+}
 
-`SampleApp/Program.cs` intentionally violates both rules so you can see the diagnostics when running a build in the sample, Visual Studio, or VS Code.
+Console.WriteLine($"Telemetry fetched from {snapshot.Source}."); // violates CR0001
+```
 
-### How to use
+The analyzer also warns if any public async methods (such as `BackgroundWorker.Compute`) do not end with `Async`, which is how `CR0002` stays enforced.
 
-1. Restore/build everything:
-   ```bash
-   dotnet build
-   ```
-   The build output will show the analyzer warnings raised in `SampleApp`.
-2. Run the sample console application (warnings still appear but the app runs):
-   ```bash
-   dotnet run --project SampleApp
-   ```
-3. Analyze `SampleApp` from the command line. The analyzer runs automatically during build, so invoking `dotnet build SampleApp` or the more thorough `dotnet build` from the repo root will surface diagnostics. You should see warnings `CR0001`/`CR0002` in the output—treat them as you would compiler warnings (they can fail CI if you turn `warningsAsErrors` on).
-4. Reference the analyzer from another project by copying the `<ProjectReference ... OutputItemType="Analyzer" />` snippet from `SampleApp.csproj`, or pack it as a NuGet package:
-   ```bash
-   dotnet pack CustomRoselynAnalyzer -c Release
-   ```
-   This command creates `CustomRoselynAnalyzer/bin/Release/CustomRoselynAnalyzer.1.0.0.nupkg`, which is just a zipped NuGet package. You can distribute that file directly or inspect it with any zip tool.
+## Next steps
 
-### Next steps
-
-- Add more `DiagnosticAnalyzer` implementations in `CustomRoselynAnalyzer`.
-- Expand `AnalyzerReleases.Unshipped.md` / `.Shipped.md` as rules evolve so versioned release notes stay accurate.
-- Add unit tests using `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.XUnit` if you need automated verification.
+- Add more `DiagnosticAnalyzer` implementations (and accompanying code fixes, if desired) under `Rules/`.
+- Keep `AnalyzerReleases.Shipped.md` and `.Unshipped.md` in sync with released rule IDs so versioned release notes stay accurate.
+- Add analyzer unit tests using `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.XUnit` when you need automated verification of diagnostics.
