@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <LangVersion>latest</LangVersion>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-    <Version>0.0.3</Version>
+    <Version>0.0.4</Version>
     <NuspecFile>CustomRoslynAnalyzer.nuspec</NuspecFile>
     <PackageType>Analyzer</PackageType>    
     <PackageReadmeFile>README.md</PackageReadmeFile>
