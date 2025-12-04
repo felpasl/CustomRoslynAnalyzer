@@ -58,8 +58,8 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ steps.determine-version.outputs.version }}"
-          sed -i 's|<version>.*</version>|<version>$VERSION</version>|' CustomRoslynAnalyzer/CustomRoslynAnalyzer.nuspec
-          sed -i 's|<Version>.*</Version>|<Version>$VERSION</Version>|' CustomRoslynAnalyzer/CustomRoslynAnalyzer.csproj
+          sed -i "s|<version>.*</version>|<version>$VERSION</version>|" CustomRoslynAnalyzer/CustomRoslynAnalyzer.nuspec
+          sed -i "s|<Version>.*</Version>|<Version>$VERSION</Version>|" CustomRoslynAnalyzer/CustomRoslynAnalyzer.csproj
           dotnet pack CustomRoslynAnalyzer/CustomRoslynAnalyzer.csproj \
             --configuration Release \
             -p:PackageVersion="$VERSION" \
