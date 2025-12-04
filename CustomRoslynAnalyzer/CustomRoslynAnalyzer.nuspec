@@ -9,6 +9,7 @@
     <licenceUrl>https://github.com/felpasl/CustomRoslynAnalyzer/blob/main/LICENSE</licenceUrl>
     <licence type="expression">Apache-2.0</licence>
     <tags>roslyn analyzer csharp code-analysis</tags>
+    <readme>README.md</readme>
     <packageTypes>
       <packageType name="Analyzer" />
     </packageTypes>
