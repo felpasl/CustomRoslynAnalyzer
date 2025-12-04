@@ -81,7 +81,7 @@ jobs:
             --skip-duplicate
 
       - name: Upload package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: nuget-package
           path: ${{ steps.pack.outputs.package_path }}
@@ -156,7 +156,7 @@ jobs:
           echo "plugin_name=$pluginReleaseName" >> $env:GITHUB_OUTPUT
 
       - name: Upload SonarQube plugin artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: sonarqube-plugin
           path: ${{ steps.generate-plugin.outputs.plugin_path }}
