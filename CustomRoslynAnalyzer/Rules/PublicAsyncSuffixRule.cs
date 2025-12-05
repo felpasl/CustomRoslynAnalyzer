@@ -13,17 +13,17 @@
 // limitations under the License.
 
 namespace CustomRoslynAnalyzer.Rules;
-using CustomRoslynAnalyzer.Configuration;
-using CustomRoslynAnalyzer.Core;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using System.Collections.Immutable;
 using System.Linq;
 
 /// <summary>
 /// Analyzer rule that enforces the 'Async' suffix on public asynchronous method names.
 /// </summary>
-public sealed class PublicAsyncSuffixRule : IAnalyzerRule
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+internal sealed class PublicAsyncSuffixRule : DiagnosticAnalyzer
 {
     private const string DiagnosticId = "CR0002";
     private const string Title = "Async method names should end with Async";
@@ -32,17 +32,7 @@ public sealed class PublicAsyncSuffixRule : IAnalyzerRule
     private const string Description =
         "Async methods should end with Async so consumers understand they run asynchronously.";
 
-    private static readonly RuleDescriptorInfo Info = new (
-        id: DiagnosticId,
-        title: Title,
-        messageFormat: MessageFormat,
-        category: Category,
-        defaultSeverity: DiagnosticSeverity.Warning,
-        enabledByDefault: true,
-        description: Description,
-        helpLinkUri: "https://github.com/felpasl/CustomRoselynAnalyzer/blob/main/doc/CR0002.md");
-
-    private static readonly DiagnosticDescriptor DefaultRuleDescriptor = new (
+    private static readonly DiagnosticDescriptor Rule = new (
         id: DiagnosticId,
         title: Title,
         messageFormat: MessageFormat,
@@ -52,41 +42,22 @@ public sealed class PublicAsyncSuffixRule : IAnalyzerRule
         description: Description,
         helpLinkUri: "https://github.com/felpasl/CustomRoselynAnalyzer/blob/main/doc/CR0002.md");
 
-    private readonly bool isEnabled;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PublicAsyncSuffixRule"/> class.
-    /// </summary>
-    /// <param name="configurationSource">The source for rule configuration.</param>
-    public PublicAsyncSuffixRule(IRuleConfigurationSource configurationSource)
-    {
-        var configuration = configurationSource.GetConfiguration(Info);
-        this.Descriptor = RuleDescriptorFactory.Create(Info, configuration);
-        this.isEnabled = configuration.IsEnabled;
-    }
-
     /// <summary>
     /// Gets the descriptor used when the rule uses default configuration.
     /// </summary>
-    public static DiagnosticDescriptor DefaultDescriptor => DefaultRuleDescriptor;
+    public static DiagnosticDescriptor DefaultDescriptor => Rule;
 
-    /// <summary>
-    /// Gets the descriptor instance configured for the active compilation.
-    /// </summary>
-    public DiagnosticDescriptor Descriptor { get; }
+    /// <inheritdoc />
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
+        ImmutableArray.Create(Rule);
 
-    /// <summary>
-    /// Registers analysis callbacks for method symbols.
-    /// </summary>
-    /// <param name="context">The compilation start analysis context.</param>
-    public void Register(CompilationStartAnalysisContext context)
+    /// <inheritdoc />
+    public override void Initialize(AnalysisContext context)
     {
-        if (!this.isEnabled)
-        {
-            return;
-        }
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.EnableConcurrentExecution();
 
-        context.RegisterSymbolAction(this.AnalyzeMethodSymbol, SymbolKind.Method);
+        context.RegisterSymbolAction(AnalyzeMethodSymbol, SymbolKind.Method);
     }
 
     private static bool ReturnsTask(IMethodSymbol methodSymbol)
@@ -96,7 +67,7 @@ public sealed class PublicAsyncSuffixRule : IAnalyzerRule
     }
 
     /// <param name="context">The symbol analysis context.</param>
-    private void AnalyzeMethodSymbol(SymbolAnalysisContext context)
+    private static void AnalyzeMethodSymbol(SymbolAnalysisContext context)
     {
         if (context.Symbol is not IMethodSymbol methodSymbol)
         {
@@ -135,7 +106,7 @@ public sealed class PublicAsyncSuffixRule : IAnalyzerRule
         var location = methodSymbol.Locations.FirstOrDefault();
         if (location != null)
         {
-            context.ReportDiagnostic(Diagnostic.Create(this.Descriptor, location, methodSymbol.Name));
+            context.ReportDiagnostic(Diagnostic.Create(Rule, location, methodSymbol.Name));
         }
     }
 }

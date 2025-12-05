@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using CustomRoslynAnalyzer.Rules;
 using Microsoft.CodeAnalysis.Testing;
-using VerifyCS = CustomRoslynAnalyzer.Tests.Helpers.CSharpAnalyzerVerifier<CustomRoslynAnalyzer.CustomUsageAnalyzer>;
+using VerifyCS = CustomRoslynAnalyzer.Tests.Helpers.CSharpAnalyzerVerifier<CustomRoslynAnalyzer.Rules.AvoidConsoleWriteLineRule>;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 
 namespace CustomRoslynAnalyzer.Tests;

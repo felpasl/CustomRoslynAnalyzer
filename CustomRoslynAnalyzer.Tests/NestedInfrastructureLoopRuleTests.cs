@@ -1,13 +1,12 @@
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using CustomRoslynAnalyzer.Rules;
-using VerifyCS = CustomRoslynAnalyzer.Tests.Helpers.CSharpAnalyzerVerifier<CustomRoslynAnalyzer.CustomUsageAnalyzer>;
+using VerifyCS = CustomRoslynAnalyzer.Tests.Helpers.CSharpAnalyzerVerifier<CustomRoslynAnalyzer.Rules.NestedInfrastructureLoopRule>;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
-using CustomRoslynAnalyzer.Configuration;
 
 namespace CustomRoslynAnalyzer.Tests
 {
@@ -776,12 +775,9 @@ namespace Sample.Infrastructure
             var methodDecl = tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().First();
             var loopBody = methodDecl.Body;
 
-            var configSource = new StaticRuleConfigurationSource();
-            var rule = new NestedInfrastructureLoopRule(configSource);
-
-            var tryFindMethod = typeof(NestedInfrastructureLoopRule).GetMethod("TryFindInfrastructureUsage", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            var tryFindMethod = typeof(NestedInfrastructureLoopRule).GetMethod("TryFindInfrastructureUsage", BindingFlags.NonPublic | BindingFlags.Static)!;
             var args = new object?[] { loopBody, semanticModel, null, null };
-            var invocationResult = tryFindMethod.Invoke(rule, args);
+            var invocationResult = tryFindMethod.Invoke(null, args);
             var result = invocationResult is bool boolResult && boolResult;
             var offendingNode = (SyntaxNode?)args[2];
             var infrastructureSymbol = (ISymbol?)args[3];
@@ -818,12 +814,9 @@ namespace Sample.Infrastructure
             var methodDecl = tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().First();
             var loopBody = methodDecl.Body;
 
-            var configSource = new StaticRuleConfigurationSource();
-            var rule = new NestedInfrastructureLoopRule(configSource);
-
-            var tryFindMethod = typeof(NestedInfrastructureLoopRule).GetMethod("TryFindInfrastructureUsage", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            var tryFindMethod = typeof(NestedInfrastructureLoopRule).GetMethod("TryFindInfrastructureUsage", BindingFlags.NonPublic | BindingFlags.Static)!;
             var args = new object?[] { loopBody, semanticModel, null, null };
-            var result = (bool?)tryFindMethod.Invoke(rule, args);
+            var result = (bool?)tryFindMethod.Invoke(null, args);
             var offendingNode = (SyntaxNode?)args[2];
             var infrastructureSymbol = (ISymbol?)args[3];
 
@@ -864,12 +857,9 @@ namespace Sample.Infrastructure
             var methodDecl = tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().First();
             var loopBody = methodDecl.Body;
 
-            var configSource = new StaticRuleConfigurationSource();
-            var rule = new NestedInfrastructureLoopRule(configSource);
-
-            var tryFindMethod = typeof(NestedInfrastructureLoopRule).GetMethod("TryFindInfrastructureUsage", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            var tryFindMethod = typeof(NestedInfrastructureLoopRule).GetMethod("TryFindInfrastructureUsage", BindingFlags.NonPublic | BindingFlags.Static)!;
             var args = new object?[] { loopBody, semanticModel, null, null };
-            var invocationResult = tryFindMethod.Invoke(rule, args);
+            var invocationResult = tryFindMethod.Invoke(null, args);
             var result = invocationResult is bool invocationBool && invocationBool;
             var offendingNode = (SyntaxNode?)args[2];
             var infrastructureSymbol = (ISymbol?)args[3];
@@ -896,12 +886,9 @@ class C
             var methodDecl = tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().First();
             var loopBody = methodDecl.Body;
 
-            var configSource = new StaticRuleConfigurationSource();
-            var rule = new NestedInfrastructureLoopRule(configSource);
-
-            var tryFindMethod = typeof(NestedInfrastructureLoopRule).GetMethod("TryFindInfrastructureUsage", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            var tryFindMethod = typeof(NestedInfrastructureLoopRule).GetMethod("TryFindInfrastructureUsage", BindingFlags.NonPublic | BindingFlags.Static)!;
             var args = new object?[] { loopBody, semanticModel, null, null };
-            var result = (bool)tryFindMethod.Invoke(rule, args)!;
+            var result = (bool)tryFindMethod.Invoke(null, args)!;
             var offendingNode = (SyntaxNode?)args[2]!;
             var infrastructureSymbol = (ISymbol?)args[3]!;
 
@@ -941,11 +928,13 @@ namespace Sample.Infrastructure
             Assert.NotNull(symbolInfo.Symbol);
             Assert.Equal(CandidateReason.None, symbolInfo.CandidateReason);
 
-            var configSource = new StaticRuleConfigurationSource();
-            var rule = new NestedInfrastructureLoopRule(configSource);
-
-            var findMethod = typeof(NestedInfrastructureLoopRule).GetMethod("FindInfrastructureMethod", BindingFlags.NonPublic | BindingFlags.Instance)!;
-            var result = (IMethodSymbol?)findMethod.Invoke(rule, new object[] { symbolInfo, compilation })!;
+            var findMethod = typeof(NestedInfrastructureLoopRule).GetMethod(
+                "FindInfrastructureMethod",
+                BindingFlags.NonPublic | BindingFlags.Static,
+                binder: null,
+                types: new[] { typeof(SymbolInfo), typeof(Compilation) },
+                modifiers: null)!;
+            var result = (IMethodSymbol?)findMethod.Invoke(null, new object[] { symbolInfo, compilation })!;
 
             Assert.NotNull(result);
             Assert.Equal("Helper", result.Name);

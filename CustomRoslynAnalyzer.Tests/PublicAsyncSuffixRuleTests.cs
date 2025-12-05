@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using CustomRoslynAnalyzer.Rules;
 using Microsoft.CodeAnalysis.Testing;
-using VerifyCS = CustomRoslynAnalyzer.Tests.Helpers.CSharpAnalyzerVerifier<CustomRoslynAnalyzer.CustomUsageAnalyzer>;
+using VerifyCS = CustomRoslynAnalyzer.Tests.Helpers.CSharpAnalyzerVerifier<CustomRoslynAnalyzer.Rules.PublicAsyncSuffixRule>;
 
 namespace CustomRoslynAnalyzer.Tests;
 
@@ -94,6 +94,24 @@ public class TestClass
     public async System.Threading.Tasks.ValueTask FetchAsync()
     {
         await Task.Delay(10);
+    }
+}";
+
+        await VerifyCS.VerifyAnalyzerAsync(testCode);
+    }
+
+    [Fact]
+    public async Task DoesNotReportPropertyGetterReturningTask()
+    {
+        const string testCode = @"
+using System.Threading.Tasks;
+
+public class TestClass
+{
+    public Task<int> Value
+    {
+        get => Task.FromResult(42);
+        set => _ = value;
     }
 }";
 

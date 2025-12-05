@@ -13,20 +13,20 @@
 // limitations under the License.
 
 namespace CustomRoslynAnalyzer.Rules;
-using CustomRoslynAnalyzer.Configuration;
-using CustomRoslynAnalyzer.Core;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Diagnostics;
 
 /// <summary>
 /// Analyzer rule that warns when infrastructure-layer services are called from within loop bodies.
 /// </summary>
-public sealed class NestedInfrastructureLoopRule : IAnalyzerRule
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+internal sealed class NestedInfrastructureLoopRule : DiagnosticAnalyzer
 {
     private const string DiagnosticId = "CR0003";
     private const string Title = "Avoid infrastructure calls inside loops";
@@ -37,17 +37,7 @@ public sealed class NestedInfrastructureLoopRule : IAnalyzerRule
 
     private const string InfrastructureNamespaceToken = "Infrastructure";
 
-    private static readonly RuleDescriptorInfo Info = new (
-        id: DiagnosticId,
-        title: Title,
-        messageFormat: MessageFormat,
-        category: Category,
-        defaultSeverity: DiagnosticSeverity.Warning,
-        enabledByDefault: true,
-        description: Description,
-        helpLinkUri: "https://github.com/felpasl/CustomRoselynAnalyzer/blob/main/doc/CR0003.md");
-
-    private static readonly DiagnosticDescriptor DefaultRuleDescriptor = new (
+    private static readonly DiagnosticDescriptor Rule = new (
         id: DiagnosticId,
         title: Title,
         messageFormat: MessageFormat,
@@ -66,48 +56,37 @@ public sealed class NestedInfrastructureLoopRule : IAnalyzerRule
         SyntaxKind.DoStatement,
     };
 
-    private readonly bool isEnabled;
-
-    private readonly ConcurrentDictionary<ISymbol, bool> methodInfrastructureCache =
-        new (SymbolEqualityComparer.Default);
-
-    private readonly RuleConfiguration configuration;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="NestedInfrastructureLoopRule"/> class.
-    /// </summary>
-    /// <param name="configurationSource">The source for rule configuration.</param>
-    public NestedInfrastructureLoopRule(IRuleConfigurationSource configurationSource)
-    {
-        this.configuration = configurationSource.GetConfiguration(Info);
-        this.Descriptor = RuleDescriptorFactory.Create(Info, this.configuration);
-        this.isEnabled = this.configuration.IsEnabled;
-    }
-
     /// <summary>
     /// Gets the default descriptor used by the rule absent any configuration overrides.
     /// </summary>
-    public static DiagnosticDescriptor DefaultDescriptor => DefaultRuleDescriptor;
+    public static DiagnosticDescriptor DefaultDescriptor => Rule;
 
-    /// <summary>
-    /// Gets the descriptor instance configured for the current compilation.
-    /// </summary>
-    public DiagnosticDescriptor Descriptor { get; }
+    /// <inheritdoc />
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
+        ImmutableArray.Create(Rule);
 
-    /// <summary>
-    /// Registers syntax node actions that inspect loop bodies for infrastructure usage.
-    /// </summary>
-    /// <param name="context">The compilation start analysis context.</param>
-    public void Register(CompilationStartAnalysisContext context)
+    /// <inheritdoc />
+    public override void Initialize(AnalysisContext context)
     {
-        if (!this.isEnabled || this.configuration.Severity == DiagnosticSeverity.Hidden)
-        {
-            return;
-        }
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.EnableConcurrentExecution();
 
-        context.RegisterSyntaxNodeAction(this.AnalyzeInvocation, SyntaxKind.InvocationExpression);
-        context.RegisterSyntaxNodeAction(this.AnalyzeCreation, SyntaxKind.ObjectCreationExpression);
-        context.RegisterSyntaxNodeAction(this.AnalyzeImplicitCreation, SyntaxKind.ImplicitObjectCreationExpression);
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            var descriptor = Rule;
+            var methodInfrastructureCache =
+                new ConcurrentDictionary<ISymbol, bool>(SymbolEqualityComparer.Default);
+
+            compilationContext.RegisterSyntaxNodeAction(
+                nodeContext => AnalyzeInvocation(nodeContext, descriptor, methodInfrastructureCache),
+                SyntaxKind.InvocationExpression);
+            compilationContext.RegisterSyntaxNodeAction(
+                nodeContext => AnalyzeCreation(nodeContext, descriptor),
+                SyntaxKind.ObjectCreationExpression);
+            compilationContext.RegisterSyntaxNodeAction(
+                nodeContext => AnalyzeImplicitCreation(nodeContext, descriptor),
+                SyntaxKind.ImplicitObjectCreationExpression);
+        });
     }
 
     private static SyntaxNode? ExtractBodyNode(SyntaxNode syntax) => syntax switch
@@ -256,9 +235,18 @@ public sealed class NestedInfrastructureLoopRule : IAnalyzerRule
     }
 
     /// <param name="context">The syntax node analysis context.</param>
-    private void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
+    /// <param name="descriptor">Descriptor used when reporting diagnostics.</param>
+    /// <param name="methodInfrastructureCache">Cache for tracking methods that invoke infrastructure services.</param>
+    private static void AnalyzeInvocation(
+        SyntaxNodeAnalysisContext context,
+        DiagnosticDescriptor descriptor,
+        ConcurrentDictionary<ISymbol, bool> methodInfrastructureCache)
     {
-        var invocation = (InvocationExpressionSyntax)context.Node;
+        if (context.Node is not InvocationExpressionSyntax invocation)
+        {
+            return;
+        }
+
         if (!IsInsideLoopBody(invocation))
         {
             return;
@@ -266,9 +254,10 @@ public sealed class NestedInfrastructureLoopRule : IAnalyzerRule
 
         if (!TryGetInfrastructureSymbol(context.SemanticModel.GetSymbolInfo(invocation), out var infrastructureSymbol))
         {
-            infrastructureSymbol = this.FindInfrastructureMethod(
+            infrastructureSymbol = FindInfrastructureMethod(
                 context.SemanticModel.GetSymbolInfo(invocation),
-                context.SemanticModel.Compilation);
+                context.SemanticModel.Compilation,
+                methodInfrastructureCache);
             if (infrastructureSymbol is null)
             {
                 return;
@@ -291,13 +280,18 @@ public sealed class NestedInfrastructureLoopRule : IAnalyzerRule
             location = memberAccess.Name.GetLocation();
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(this.Descriptor, location));
+        context.ReportDiagnostic(Diagnostic.Create(descriptor, location));
     }
 
     /// <param name="context">The syntax node analysis context.</param>
-    private void AnalyzeCreation(SyntaxNodeAnalysisContext context)
+    /// <param name="descriptor">Descriptor used when reporting diagnostics.</param>
+    private static void AnalyzeCreation(SyntaxNodeAnalysisContext context, DiagnosticDescriptor descriptor)
     {
-        var creation = (ObjectCreationExpressionSyntax)context.Node;
+        if (context.Node is not ObjectCreationExpressionSyntax creation)
+        {
+            return;
+        }
+
         if (!IsInsideLoopBody(creation))
         {
             return;
@@ -315,13 +309,18 @@ public sealed class NestedInfrastructureLoopRule : IAnalyzerRule
         Debug.WriteLine($"[CR0003] Creation '{creation}' of infrastructure '{symbolDescription}' is inside a loop.");
 #endif
 
-        context.ReportDiagnostic(Diagnostic.Create(this.Descriptor, creation.GetLocation()));
+        context.ReportDiagnostic(Diagnostic.Create(descriptor, creation.GetLocation()));
     }
 
     /// <param name="context">The syntax node analysis context.</param>
-    private void AnalyzeImplicitCreation(SyntaxNodeAnalysisContext context)
+    /// <param name="descriptor">Descriptor used when reporting diagnostics.</param>
+    private static void AnalyzeImplicitCreation(SyntaxNodeAnalysisContext context, DiagnosticDescriptor descriptor)
     {
-        var implicitCreation = (ImplicitObjectCreationExpressionSyntax)context.Node;
+        if (context.Node is not ImplicitObjectCreationExpressionSyntax implicitCreation)
+        {
+            return;
+        }
+
         if (!IsInsideLoopBody(implicitCreation))
         {
             return;
@@ -338,10 +337,10 @@ public sealed class NestedInfrastructureLoopRule : IAnalyzerRule
         Debug.WriteLine($"[CR0003] Implicit creation '{implicitCreation}' of infrastructure '{symbolDescription}' is inside a loop.");
 #endif
 
-        context.ReportDiagnostic(Diagnostic.Create(this.Descriptor, implicitCreation.GetLocation()));
+        context.ReportDiagnostic(Diagnostic.Create(descriptor, implicitCreation.GetLocation()));
     }
 
-    private bool TryFindInfrastructureUsage(
+    private static bool TryFindInfrastructureUsage(
         SyntaxNode loopBody,
         SemanticModel semanticModel,
         out SyntaxNode? offendingNode,
@@ -359,7 +358,9 @@ public sealed class NestedInfrastructureLoopRule : IAnalyzerRule
                         return true;
                     }
 
-                    var indirectSymbol = this.FindInfrastructureMethod(invocationSymbol, semanticModel.Compilation);
+                    var indirectSymbol = FindInfrastructureMethod(
+                        invocationSymbol,
+                        semanticModel.Compilation);
                     if (indirectSymbol is not null)
                     {
                         offendingNode = invocation;
@@ -399,10 +400,19 @@ public sealed class NestedInfrastructureLoopRule : IAnalyzerRule
         return false;
     }
 
-    private IMethodSymbol? FindInfrastructureMethod(SymbolInfo symbolInfo, Compilation compilation)
+    private static IMethodSymbol? FindInfrastructureMethod(SymbolInfo symbolInfo, Compilation compilation) =>
+        FindInfrastructureMethod(
+            symbolInfo,
+            compilation,
+            new ConcurrentDictionary<ISymbol, bool>(SymbolEqualityComparer.Default));
+
+    private static IMethodSymbol? FindInfrastructureMethod(
+        SymbolInfo symbolInfo,
+        Compilation compilation,
+        ConcurrentDictionary<ISymbol, bool> methodInfrastructureCache)
     {
         if (symbolInfo.Symbol is IMethodSymbol methodSymbol &&
-            this.CallsMethodWithInfrastructure(methodSymbol, compilation))
+            CallsMethodWithInfrastructure(methodSymbol, compilation, methodInfrastructureCache))
         {
             return methodSymbol;
         }
@@ -415,7 +425,7 @@ public sealed class NestedInfrastructureLoopRule : IAnalyzerRule
         foreach (var candidate in symbolInfo.CandidateSymbols)
         {
             if (candidate is IMethodSymbol candidateMethod &&
-                this.CallsMethodWithInfrastructure(candidateMethod, compilation))
+                CallsMethodWithInfrastructure(candidateMethod, compilation, methodInfrastructureCache))
             {
                 return candidateMethod;
             }
@@ -424,14 +434,19 @@ public sealed class NestedInfrastructureLoopRule : IAnalyzerRule
         return null;
     }
 
-    private bool CallsMethodWithInfrastructure(IMethodSymbol methodSymbol, Compilation compilation)
+    private static bool CallsMethodWithInfrastructure(
+        IMethodSymbol methodSymbol,
+        Compilation compilation,
+        ConcurrentDictionary<ISymbol, bool> methodInfrastructureCache)
     {
-        return this.methodInfrastructureCache.GetOrAdd(methodSymbol, symbol =>
+        return methodInfrastructureCache.GetOrAdd(methodSymbol, symbol =>
         {
             foreach (var syntaxReference in symbol.DeclaringSyntaxReferences)
             {
                 var syntax = syntaxReference.GetSyntax();
+#pragma warning disable RS1030 // Do not invoke Compilation.GetSemanticModel() method within a diagnostic analyzer
                 var semanticModel = compilation.GetSemanticModel(syntax.SyntaxTree);
+#pragma warning restore RS1030 // Obtain semantic model to inspect method bodies
                 var body = ExtractBodyNode(syntax);
                 if (body is null)
                 {
