@@ -202,11 +202,34 @@ internal sealed class NestedInfrastructureLoopRule : DiagnosticAnalyzer
                 continue;
             }
 
-            var methodSymbol = semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-            if (methodSymbol?.Name == "ForEach")
+            var methodSymbol = semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol
+                               ?? semanticModel.GetSymbolInfo(invocation.Expression).Symbol as IMethodSymbol;
+            if (IsLambdaIterationMethod(methodSymbol))
             {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    private static bool IsLambdaIterationMethod(IMethodSymbol? methodSymbol)
+    {
+        if (methodSymbol is null)
+        {
+            return false;
+        }
+
+        if (methodSymbol.Name == "ForEach")
+        {
+            return true;
+        }
+
+        if (methodSymbol.Name is "Select" or "Where")
+        {
+            var containingType = methodSymbol.ContainingType?.ToDisplayString();
+            return string.Equals(containingType, "System.Linq.Enumerable", StringComparison.Ordinal) ||
+                   string.Equals(containingType, "System.Linq.Queryable", StringComparison.Ordinal);
         }
 
         return false;

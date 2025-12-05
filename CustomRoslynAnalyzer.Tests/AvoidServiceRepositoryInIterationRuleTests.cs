@@ -221,6 +221,34 @@ public sealed class OrderService
     }
 
     [Fact]
+    public async Task DoesNotReportServiceUsageInsideNonIterationLambda()
+    {
+        const string testCode = @"
+using System;
+
+public class Processor
+{
+    private readonly OrderService _service = new();
+
+    public void Configure()
+    {
+        Func<int, int> handler = value =>
+        {
+            _service.Save(value);
+            return value;
+        };
+    }
+}
+
+public sealed class OrderService
+{
+    public void Save(int value) { }
+}";
+
+        await VerifyCS.VerifyAnalyzerAsync(testCode);
+    }
+
+    [Fact]
     public async Task ReportsLambdaInvocationInsideLoopLikeCall()
     {
         const string testCode = @"

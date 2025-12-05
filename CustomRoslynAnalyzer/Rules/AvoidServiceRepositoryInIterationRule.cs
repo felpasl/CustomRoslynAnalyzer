@@ -87,7 +87,7 @@ internal sealed class AvoidServiceRepositoryInIterationRule : DiagnosticAnalyzer
         ConcurrentDictionary<IMethodSymbol, ISymbol?> methodUsageCache)
     {
         if (context.Node is not InvocationExpressionSyntax invocation ||
-            !IsInRestrictedContext(invocation))
+            !IsInRestrictedContext(invocation, context.SemanticModel))
         {
             return;
         }
@@ -124,7 +124,7 @@ internal sealed class AvoidServiceRepositoryInIterationRule : DiagnosticAnalyzer
     private static void AnalyzeCreation(SyntaxNodeAnalysisContext context)
     {
         if (context.Node is not ObjectCreationExpressionSyntax creation ||
-            !IsInRestrictedContext(creation))
+            !IsInRestrictedContext(creation, context.SemanticModel))
         {
             return;
         }
@@ -144,7 +144,7 @@ internal sealed class AvoidServiceRepositoryInIterationRule : DiagnosticAnalyzer
     private static void AnalyzeImplicitCreation(SyntaxNodeAnalysisContext context)
     {
         if (context.Node is not ImplicitObjectCreationExpressionSyntax creation ||
-            !IsInRestrictedContext(creation))
+            !IsInRestrictedContext(creation, context.SemanticModel))
         {
             return;
         }
@@ -207,7 +207,7 @@ internal sealed class AvoidServiceRepositoryInIterationRule : DiagnosticAnalyzer
                name.IndexOf("Repository", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
-    private static bool IsInRestrictedContext(SyntaxNode node)
+    private static bool IsInRestrictedContext(SyntaxNode node, SemanticModel semanticModel)
     {
         foreach (var ancestor in node.Ancestors())
         {
@@ -218,8 +218,44 @@ internal sealed class AvoidServiceRepositoryInIterationRule : DiagnosticAnalyzer
 
             if (ancestor is SimpleLambdaExpressionSyntax or ParenthesizedLambdaExpressionSyntax)
             {
-                return true;
+                var invocation = ancestor.Ancestors()
+                    .OfType<InvocationExpressionSyntax>()
+                    .FirstOrDefault();
+
+                if (invocation is null)
+                {
+                    continue;
+                }
+
+                var methodSymbol = semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol
+                                   ?? semanticModel.GetSymbolInfo(invocation.Expression).Symbol as IMethodSymbol;
+                if (IsIterationLambdaMethod(methodSymbol))
+                {
+                    return true;
+                }
             }
+        }
+
+        return false;
+    }
+
+    private static bool IsIterationLambdaMethod(IMethodSymbol? methodSymbol)
+    {
+        if (methodSymbol is null)
+        {
+            return false;
+        }
+
+        if (methodSymbol.Name == "ForEach")
+        {
+            return true;
+        }
+
+        if (methodSymbol.Name is "Select" or "Where")
+        {
+            var containingType = methodSymbol.ContainingType?.ToDisplayString();
+            return string.Equals(containingType, "System.Linq.Enumerable", StringComparison.Ordinal) ||
+                   string.Equals(containingType, "System.Linq.Queryable", StringComparison.Ordinal);
         }
 
         return false;
