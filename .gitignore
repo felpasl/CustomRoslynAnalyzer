@@ -10,7 +10,6 @@ artifacts
 *.vsconfig
 .nuget/packages/
 project.lock.json
-*.vscode/
 *.ide/
 *.dbmdl
 *.bak
@@ -23,8 +22,6 @@ node_modules/
 **/*.iml
 # Publish outputs
 /[Pp]ublish/
-# VS Code settings
-.vscode/
 # Resharper
 _ReSharper*/
 *.DotSettings.user
