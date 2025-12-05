@@ -30,6 +30,7 @@ public sealed class RuleDescriptorInfo
     /// <param name="defaultSeverity">The default severity applied when the rule is enabled.</param>
     /// <param name="enabledByDefault">A value indicating whether the rule is enabled by default.</param>
     /// <param name="description">The detailed description shown in IDEs and documentation.</param>
+    /// <param name="helpLinkUri">The URI to documentation for this rule.</param>
     public RuleDescriptorInfo(
         string id,
         string title,
@@ -37,7 +38,8 @@ public sealed class RuleDescriptorInfo
         string category,
         DiagnosticSeverity defaultSeverity,
         bool enabledByDefault,
-        string description)
+        string description,
+        string? helpLinkUri = null)
     {
         this.Id = id;
         this.Title = title;
@@ -46,6 +48,7 @@ public sealed class RuleDescriptorInfo
         this.DefaultSeverity = defaultSeverity;
         this.EnabledByDefault = enabledByDefault;
         this.Description = description;
+        this.HelpLinkUri = helpLinkUri;
     }
 
     /// <summary>
@@ -82,4 +85,9 @@ public sealed class RuleDescriptorInfo
     /// Gets the detailed description shown in IDEs and documentation.
     /// </summary>
     public string Description { get; }
+
+    /// <summary>
+    /// Gets the URI to documentation for this rule.
+    /// </summary>
+    public string? HelpLinkUri { get; }
 }

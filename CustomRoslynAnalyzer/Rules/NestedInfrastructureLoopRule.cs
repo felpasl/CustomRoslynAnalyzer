@@ -44,7 +44,8 @@ public sealed class NestedInfrastructureLoopRule : IAnalyzerRule
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         enabledByDefault: true,
-        description: Description);
+        description: Description,
+        helpLinkUri: "https://github.com/felpasl/CustomRoselynAnalyzer/blob/main/doc/CR0003.md");
 
     private static readonly DiagnosticDescriptor DefaultRuleDescriptor = new (
         id: DiagnosticId,
@@ -53,7 +54,8 @@ public sealed class NestedInfrastructureLoopRule : IAnalyzerRule
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: Description);
+        description: Description,
+        helpLinkUri: "https://github.com/felpasl/CustomRoselynAnalyzer/blob/main/doc/CR0003.md");
 
     private static readonly SyntaxKind[] LoopKinds =
     {

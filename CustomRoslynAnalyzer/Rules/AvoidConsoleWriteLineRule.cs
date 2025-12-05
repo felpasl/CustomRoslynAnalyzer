@@ -40,7 +40,8 @@ public sealed class AvoidConsoleWriteLineRule : IAnalyzerRule
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         enabledByDefault: true,
-        description: Description);
+        description: Description,
+        helpLinkUri: "https://github.com/felpasl/CustomRoselynAnalyzer/blob/main/doc/CR0001.md");
 
     private static readonly DiagnosticDescriptor DefaultRuleDescriptor = new (
         id: DiagnosticId,
@@ -49,7 +50,8 @@ public sealed class AvoidConsoleWriteLineRule : IAnalyzerRule
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: Description);
+        description: Description,
+        helpLinkUri: "https://github.com/felpasl/CustomRoselynAnalyzer/blob/main/doc/CR0001.md");
 
     private readonly bool isEnabled;
 
@@ -104,7 +106,7 @@ public sealed class AvoidConsoleWriteLineRule : IAnalyzerRule
         }
 
         if (symbol.ContainingType?.ToDisplayString() == "System.Console" &&
-            symbol.Name == "WriteLine")
+            (symbol.Name == "WriteLine" || symbol.Name == "Write"))
         {
             context.ReportDiagnostic(Diagnostic.Create(this.Descriptor, memberAccess.Name.GetLocation()));
         }

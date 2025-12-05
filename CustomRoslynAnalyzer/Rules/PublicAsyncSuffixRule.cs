@@ -39,7 +39,8 @@ public sealed class PublicAsyncSuffixRule : IAnalyzerRule
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         enabledByDefault: true,
-        description: Description);
+        description: Description,
+        helpLinkUri: "https://github.com/felpasl/CustomRoselynAnalyzer/blob/main/doc/CR0002.md");
 
     private static readonly DiagnosticDescriptor DefaultRuleDescriptor = new (
         id: DiagnosticId,
@@ -48,7 +49,8 @@ public sealed class PublicAsyncSuffixRule : IAnalyzerRule
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: Description);
+        description: Description,
+        helpLinkUri: "https://github.com/felpasl/CustomRoselynAnalyzer/blob/main/doc/CR0002.md");
 
     private readonly bool isEnabled;
 

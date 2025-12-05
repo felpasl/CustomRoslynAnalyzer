@@ -36,6 +36,7 @@ internal static class RuleDescriptorFactory
             category: info.Category,
             defaultSeverity: configuration.Severity,
             isEnabledByDefault: configuration.IsEnabled,
-            description: info.Description);
+            description: info.Description,
+            helpLinkUri: info.HelpLinkUri);
     }
 }

@@ -28,9 +28,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="CustomRoslynAnalyzer.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <AdditionalFiles Include="..\stylecop.json" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <Content Include="..\README.md" Pack="true" PackagePath="README.md" />
     <Content Include="..\LICENSE" Pack="true" PackagePath="LICENSE" />
